@@ -14,7 +14,6 @@ namespace MyAppApi.Controllers
             _context = context;
         }
 
-        // ✅ Endpoint: GET api/cars
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CarDto>>> GetCars()
         {
@@ -42,19 +41,19 @@ namespace MyAppApi.Controllers
             return Ok(carDtos);
         }
 
-        // ✅ Endpoint: POST api/cars (إضافة سيارة جديدة)
+
         [HttpPost]
         public async Task<IActionResult> AddCar([FromBody] CarCreateDto carDto)
         {
             if (carDto == null)
                 return BadRequest("Invalid data.");
 
-            // 🔹 التحقق من الموقع قبل إضافة السيارة
+          
             var location = await _context.Locations.FindAsync(carDto.LocationId);
             if (location == null)
                 return NotFound("Location not found.");
 
-            // 🔹 إنشاء السيارة الجديدة
+     
             var newCar = new Car
             {
                 Model = carDto.Model,
@@ -66,9 +65,9 @@ namespace MyAppApi.Controllers
             };
 
             _context.Cars.Add(newCar);
-            await _context.SaveChangesAsync(); // 🔹 حفظ السيارة أولاً للحصول على CarId
+            await _context.SaveChangesAsync();
 
-            // 🔹 إضافة الصور المرتبطة
+            
             if (carDto.ImageUrls != null && carDto.ImageUrls.Count > 0)
             {
                 foreach (var imageUrl in carDto.ImageUrls)
@@ -80,7 +79,7 @@ namespace MyAppApi.Controllers
                     });
                 }
 
-                await _context.SaveChangesAsync(); // 🔹 حفظ الصور
+                await _context.SaveChangesAsync(); 
             }
 
             return CreatedAtAction(nameof(GetCars), new { id = newCar.Id }, newCar);

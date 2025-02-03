@@ -15,7 +15,7 @@ namespace MyAppApi.Controllers
             _bookingService = bookingService;
         }
 
-        // ✅ Endpoint: POST api/booking/create
+       
         [HttpPost]
         [Route("create")]
         public async Task<IActionResult> CreateBooking([FromBody] BookingDto bookingDto)
