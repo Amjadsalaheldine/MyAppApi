@@ -3,8 +3,6 @@ using MyAppApi.Data.Dtos;
 
 namespace MyAppApi.Services
 {
-    
-
     public class BookingService : IBookingService
     {
         private readonly AppDbContext _context;
@@ -23,7 +21,7 @@ namespace MyAppApi.Services
                 EndDate = bookingDto.EndDate,
                 EndTime = bookingDto.EndTime,
                 TotalPrice = bookingDto.TotalPrice,
-                UserId = bookingDto.UserId,
+                UserId = bookingDto.UserId, 
                 CarId = bookingDto.CarId,
                 IdentityImage = bookingDto.IdentityImage,
                 BookingStatus = bookingDto.BookingStatus
@@ -33,10 +31,26 @@ namespace MyAppApi.Services
 
             var result = await _context.SaveChangesAsync();
 
-         
             return result > 0;
         }
 
+        public async Task<List<BookingDto>> GetBookingsByUserAsync(string userId) 
+        {
+            return await _context.Bookings
+                .Where(b => b.UserId == userId)  
+                .Select(b => new BookingDto
+                {
+                    Id = b.Id,
+                    StartDate = b.StartDate,
+                    StartTime = b.StartTime,
+                    EndDate = b.EndDate,
+                    EndTime = b.EndTime,
+                    TotalPrice = b.TotalPrice,
+                    CarModel = b.Car.Model,
+                    BookingStatus = b.BookingStatus
+                })
+                .ToListAsync();
+        }
 
        
     }

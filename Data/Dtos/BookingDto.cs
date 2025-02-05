@@ -12,5 +12,6 @@
         public int CarId { get; set; }
         public string IdentityImage { get; set; }
         public string BookingStatus { get; set; }
+        public object CarModel { get; internal set; }
     }
 }

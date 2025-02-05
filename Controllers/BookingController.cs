@@ -15,7 +15,7 @@ namespace MyAppApi.Controllers
             _bookingService = bookingService;
         }
 
-       
+
         [HttpPost]
         [Route("create")]
         public async Task<IActionResult> CreateBooking([FromBody] BookingDto bookingDto)
@@ -34,5 +34,23 @@ namespace MyAppApi.Controllers
 
             return BadRequest("Failed to create booking");
         }
+
+
+        [HttpGet]
+        [Route("user/{userId}")]
+        public async Task<IActionResult> GetBookingsByUser(string userId)
+        {
+            var bookings = await _bookingService.GetBookingsByUserAsync(userId);
+
+            if (bookings == null || !bookings.Any())
+            {
+                return NotFound("No bookings found for this user");
+            }
+
+            return Ok(bookings);
+        }
+
+
+
     }
 }
