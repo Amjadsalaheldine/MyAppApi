@@ -58,6 +58,42 @@ public class ManageBookingController : ControllerBase
 
         return Ok(new { message = "Booking status updated successfully." });
     }
+
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetBookingDetails(int id) 
+    {
+        var booking = await _context.Bookings
+            .Include(b => b.Car)
+            .Include(b => b.User)
+            .FirstOrDefaultAsync(b => b.Id == id);
+
+        if (booking == null)
+            return NotFound("Booking not found.");
+
+        var bookingDto = new BookingReportDto
+        {
+            Id = booking.Id,  
+            UserName = booking.User.UserName,
+            CarModel = booking.Car.Model,
+            StartDate = booking.StartDate,
+            EndDate = booking.EndDate,
+            TotalPrice = booking.TotalPrice
+        };
+
+        return Ok(bookingDto);
+    }
+
+}
+
+internal class BookingReportDto
+{
+    public int Id { get; set; }
+    public string UserName { get; set; }
+    public string CarModel { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public decimal TotalPrice { get; set; }
 }
 
 public class ManageBookingDto

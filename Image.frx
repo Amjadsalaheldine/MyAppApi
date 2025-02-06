@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Description="This report demonstrates PictureObject features." ReportInfo.Created="06/16/2009 21:04:52" ReportInfo.Modified="02/06/2025 16:33:27" ReportInfo.CreatorVersion="2024.2.20.0">
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqM7gJFg/iaLrqMhRfGy5lGtC7ZnewPgXupDhaZ0aDmJ1x58x3F1yJpaWvPTERGetVPdorLADXAxZ/2DVBpE9FTWk9i+EUPz5qnP4ykeMRu30W8JvpljvcWr6izPlUA1tCU16B2quSWQbU4AhKU1KRzKskxKRgcL5b/BJeyRQU1ayNR2L2oRBjsPXGgiIbl83RXVbHC6TmS5scjTeYJT2UCg==">
+      <TableDataSource Name="Images" DataType="System.Int32" Enabled="true" TableName="Images">
+        <Column Name="Id" DataType="System.Int32"/>
+        <Column Name="Url" DataType="System.String"/>
+        <Column Name="CarId" DataType="System.Int32"/>
+      </TableDataSource>
+      <TableDataSource Name="AspNetUsers" DataType="System.Int32" Enabled="true" TableName="AspNetUsers">
+        <Column Name="Id" DataType="System.String"/>
+        <Column Name="FullName" DataType="System.String"/>
+        <Column Name="UserName" DataType="System.String"/>
+        <Column Name="NormalizedUserName" DataType="System.String"/>
+        <Column Name="Email" DataType="System.String"/>
+        <Column Name="NormalizedEmail" DataType="System.String"/>
+        <Column Name="EmailConfirmed" DataType="System.Boolean" BindableControl="CheckBox"/>
+        <Column Name="PasswordHash" DataType="System.String"/>
+        <Column Name="SecurityStamp" DataType="System.String"/>
+        <Column Name="ConcurrencyStamp" DataType="System.String"/>
+        <Column Name="PhoneNumber" DataType="System.String"/>
+        <Column Name="PhoneNumberConfirmed" DataType="System.Boolean" BindableControl="CheckBox"/>
+        <Column Name="TwoFactorEnabled" DataType="System.Boolean" BindableControl="CheckBox"/>
+        <Column Name="LockoutEnd" DataType="System.DateTimeOffset"/>
+        <Column Name="LockoutEnabled" DataType="System.Boolean" BindableControl="CheckBox"/>
+        <Column Name="AccessFailedCount" DataType="System.Int32"/>
+      </TableDataSource>
+      <TableDataSource Name="Locations" DataType="System.Int32" Enabled="true" TableName="Locations">
+        <Column Name="Id" DataType="System.Int32"/>
+        <Column Name="Name" DataType="System.String"/>
+        <Column Name="Address" DataType="System.String"/>
+        <Column Name="City" DataType="System.String"/>
+        <Column Name="Country" DataType="System.String"/>
+      </TableDataSource>
+      <TableDataSource Name="Cars" DataType="System.Int32" Enabled="true" TableName="Cars">
+        <Column Name="Id" DataType="System.Int32"/>
+        <Column Name="Model" DataType="System.String"/>
+        <Column Name="Brand" DataType="System.String"/>
+        <Column Name="Year" DataType="System.Int32"/>
+        <Column Name="Price" DataType="System.Decimal"/>
+        <Column Name="LocationId" DataType="System.Int32"/>
+      </TableDataSource>
+      <TableDataSource Name="Bookings" DataType="System.Int32" Enabled="true" TableName="Bookings">
+        <Column Name="Id" DataType="System.Int32"/>
+        <Column Name="EndDate" DataType="System.DateTime"/>
+        <Column Name="StartDate" DataType="System.DateTime"/>
+        <Column Name="TotalPrice" DataType="System.Decimal"/>
+        <Column Name="UserId" DataType="System.String"/>
+        <Column Name="CarId" DataType="System.Int32"/>
+        <Column Name="BookingStatus" DataType="System.String"/>
+        <Column Name="EndTime" DataType="System.TimeSpan"/>
+        <Column Name="IdentityImage" DataType="System.String"/>
+        <Column Name="StartTime" DataType="System.TimeSpan"/>
+      </TableDataSource>
+      <TableDataSource Name="Payments" DataType="System.Int32" Enabled="true" TableName="Payments">
+        <Column Name="Id" DataType="System.Int32"/>
+        <Column Name="Amount" DataType="System.Decimal"/>
+        <Column Name="PaymentDate" DataType="System.DateTime"/>
+        <Column Name="PaymentMethod" DataType="System.String"/>
+        <Column Name="BookingId" DataType="System.Int32"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+    <TableDataSource Name="Categories" ReferenceName="NorthWind.Categories" DataType="System.Int32" Enabled="true">
+      <Column Name="CategoryID" DataType="System.Int32"/>
+      <Column Name="CategoryName" DataType="System.String"/>
+      <Column Name="Description" DataType="System.String"/>
+      <Column Name="Picture" DataType="System.Byte[]" BindableControl="Picture"/>
+    </TableDataSource>
+    <TableDataSource Name="Employees" ReferenceName="NorthWind.Employees" DataType="System.Int32" Enabled="true">
+      <Column Name="EmployeeID" DataType="System.Int32"/>
+      <Column Name="FirstName" DataType="System.String"/>
+      <Column Name="Title" DataType="System.String"/>
+      <Column Name="TitleOfCourtesy" DataType="System.String"/>
+      <Column Name="BirthDate" DataType="System.DateTime"/>
+      <Column Name="HireDate" DataType="System.DateTime"/>
+      <Column Name="Address" DataType="System.String"/>
+      <Column Name="City" DataType="System.String"/>
+      <Column Name="Region" DataType="System.String"/>
+      <Column Name="PostalCode" DataType="System.String"/>
+      <Column Name="Country" DataType="System.String"/>
+      <Column Name="HomePhone" DataType="System.String"/>
+      <Column Name="Extension" DataType="System.String"/>
+      <Column Name="Photo" DataType="System.Byte[]" BindableControl="Picture"/>
+      <Column Name="Notes" DataType="System.String"/>
+      <Column Name="ReportsTo" DataType="System.Int32"/>
+    </TableDataSource>
+  </Dictionary>
+  <ReportPage Name="Page1" Watermark.Font="Arial, 60pt">
+    <PageHeaderBand Name="PageHeader1" Width="718.2" Height="37.8">
+      <TextObject Name="Text2" Left="274.05" Top="9.45" Width="141.75" Height="18.9" Text="Lease contract " Font="Arial, 14pt"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="41" Width="718.2" Height="444.15" DataSource="AspNetUsers">
+      <TextObject Name="Text3" Left="1134" Top="85.05" Width="94.5" Height="18.9" Font="Arial, 14pt"/>
+      <TextObject Name="Text1" Left="28.35" Top="18.9" Width="94.5" Height="18.9" Text="FullName" Font="Arial, 14pt"/>
+      <TextObject Name="Text4" Left="28.35" Top="66.15" Width="94.5" Height="18.9" Text="[Locations.City]" Font="Arial, 14pt"/>
+      <TextObject Name="Text5" Left="28.35" Top="113.4" Width="94.5" Height="18.9" Text="[Cars.Model]" Font="Arial, 14pt"/>
+      <TextObject Name="Text7" Left="28.35" Top="170.1" Width="94.5" Height="18.9" Text="[Cars.Year]" Font="Arial, 14pt"/>
+      <TextObject Name="Text8" Left="302.4" Top="66.15" Width="113.4" Height="18.9" Text="[Cars.Price]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" WordWrap="false" Font="Arial, 14pt" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text9" Left="151.2" Top="18.9" Width="160.65" Height="18.9" Text="Book the cars from date &#13;&#10;" Font="Arial, 10pt"/>
+      <TextObject Name="Text10" Left="340.2" Top="18.9" Width="103.95" Height="18.9" Text="[Bookings.StartDate]" Format="Date" Format.Format="d" Font="Arial, 10pt"/>
+      <TextObject Name="Text11" Left="463.05" Top="18.9" Width="37.8" Height="18.9" Text="to" Font="Arial, 10pt"/>
+      <TextObject Name="Text12" Left="529.2" Top="18.9" Width="113.4" Height="18.9" Text="[Bookings.EndDate]" Format="Date" Format.Format="d" Font="Arial, 10pt"/>
+      <TextObject Name="Text6" Left="160.65" Top="66.15" Width="94.5" Height="18.9" Text="Model" Font="Arial, 14pt"/>
+      <TextObject Name="Text13" Left="538.65" Top="56.7" Width="94.5" Height="18.9" Text="EndDate" Font="Arial, 10pt"/>
+    </DataBand>
+  </ReportPage>
+</Report>

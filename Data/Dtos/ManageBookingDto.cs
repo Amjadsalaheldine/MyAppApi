@@ -1,19 +1,19 @@
 ﻿public class BookingDto
 {
-    internal string CarModel;
+    public string CarModel { get; set; }
 
     public int Id { get; set; }
     public string ClientName { get; set; } = string.Empty;
     public string IdentityImageUrl { get; set; } = string.Empty;
     public decimal Price { get; set; }
-    public string Status { get; set; } = "Pending"; 
+    public string Status { get; set; } = "Pending";
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public TimeSpan StartTime { get; set; }
     public TimeSpan EndTime { get; set; }
-    public decimal TotalPrice { get; internal set; }
-    public string UserId { get; internal set; }
-    public int CarId { get; internal set; }
-    public string IdentityImage { get; internal set; }
-    public string BookingStatus { get; internal set; }
+    public decimal TotalPrice { get; set; }
+    public string UserId { get; set; }
+    public int CarId { get; set; }
+    public string IdentityImage { get; set; }
+    public string BookingStatus { get; set; }
 }
