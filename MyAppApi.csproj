@@ -7,9 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FastReport.Data.MsSql" Version="2025.1.14" />
-    <PackageReference Include="FastReport.OpenSource.Export.PdfSimple" Version="2025.1.0" />
-    <PackageReference Include="FastReport.OpenSource.Web" Version="2025.1.0" />
+    <Compile Remove="Controllers\ReportController.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+  
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.1" />
+  
+    <PackageReference Include="Microsoft.AspNetCore.Components.Forms" Version="8.0.12" />
+  
     <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="9.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.12">
@@ -22,9 +28,14 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Graph" Version="5.69.0" />
+    <PackageReference Include="MudBlazor" Version="8.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="System.Windows.Forms" Version="4.0.0" />
 	
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="uploads\" />
   </ItemGroup>
 
 </Project>

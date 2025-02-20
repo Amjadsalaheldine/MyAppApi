@@ -1,6 +1,5 @@
 ﻿using FastReport;
 using FastReport.Export.PdfSimple;
-using FastReport.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyAppApi.Data;
@@ -23,9 +22,14 @@ namespace MyAppApi.Controllers
 
         [HttpGet("generate/{bookingId}")]
         public async Task<IActionResult> GenerateReport(int bookingId)
-
         {
-            MsSqlDataConnection.Register();
+            
+            string reportPath = Path.Combine(Directory.GetCurrentDirectory(),"fastreport.frx");
+
+            if (!System.IO.File.Exists(reportPath))
+            {
+                return NotFound("Report file not found.");
+            }
 
             var booking = await _context.Bookings
                 .Where(b => b.Id == bookingId)
@@ -42,20 +46,26 @@ namespace MyAppApi.Controllers
 
             if (booking == null)
             {
-                return NotFound("Booking Not Found");
+                return NotFound("Booking not found.");
             }
 
-            string reportPath = Path.Combine(Directory.GetCurrentDirectory(), "Reports", "fastreport.frx");
-            if (!System.IO.File.Exists(reportPath))
+            
+            var bookingData = new BookingReportData
             {
-                return NotFound("reports not found .");
-            }
+                Id = booking.Id,
+                UserName = booking.UserName,
+                CarModel = booking.CarModel,
+                StartDate = booking.StartDate,
+                EndDate = booking.EndDate,
+                TotalPrice = booking.TotalPrice
+            };
 
             Report report = new();
             report.Load(reportPath);
-            report.RegisterData(new List<object> { booking }, "Booking");
+            report.RegisterData(new List<BookingReportData> { bookingData }, "Booking");
             report.Prepare();
 
+           
             using MemoryStream pdfStream = new();
             PDFSimpleExport pdfExport = new();
             report.Export(pdfExport, pdfStream);
@@ -63,5 +73,16 @@ namespace MyAppApi.Controllers
 
             return this.File(pdfStream.ToArray(), "application/pdf", $"Booking_{bookingId}.pdf");
         }
+    }
+
+    
+    public class BookingReportData
+    {
+        public int Id { get; set; }
+        public string UserName { get; set; }
+        public string CarModel { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public decimal TotalPrice { get; set; }
     }
 }

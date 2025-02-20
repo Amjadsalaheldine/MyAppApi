@@ -1,5 +1,6 @@
-﻿using MyAppApi.Models;
-using MyAppApi.Data.Dtos;
+﻿using MyAppApi.Data.Dtos;
+using MyAppApi.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace MyAppApi.Services
 {
@@ -14,44 +15,61 @@ namespace MyAppApi.Services
 
         public async Task<bool> CreateBookingAsync(BookingDto bookingDto)
         {
-            var newBooking = new Booking
+            var booking = new Booking
             {
                 StartDate = bookingDto.StartDate,
-                StartTime = bookingDto.StartTime,
                 EndDate = bookingDto.EndDate,
-                EndTime = bookingDto.EndTime,
                 TotalPrice = bookingDto.TotalPrice,
-                UserId = bookingDto.UserId, 
+                UserId = bookingDto.UserId,
                 CarId = bookingDto.CarId,
                 IdentityImage = bookingDto.IdentityImage,
                 BookingStatus = bookingDto.BookingStatus
             };
 
-            _context.Bookings.Add(newBooking);
-
+            _context.Bookings.Add(booking);
             var result = await _context.SaveChangesAsync();
 
             return result > 0;
         }
 
-        public async Task<List<BookingDto>> GetBookingsByUserAsync(string userId) 
+        public async Task<List<BookingDto>> GetBookingsByUserAsync(string userId)
         {
-            return await _context.Bookings
-                .Where(b => b.UserId == userId)  
+            var bookings = await _context.Bookings
+                .Where(b => b.UserId == userId)
                 .Select(b => new BookingDto
                 {
                     Id = b.Id,
                     StartDate = b.StartDate,
-                    StartTime = b.StartTime,
                     EndDate = b.EndDate,
-                    EndTime = b.EndTime,
                     TotalPrice = b.TotalPrice,
-                    CarModel = b.Car.Model,
+                    UserId = b.UserId,
+                    CarId = b.CarId,
+                    IdentityImage = b.IdentityImage,
                     BookingStatus = b.BookingStatus
                 })
                 .ToListAsync();
+
+            return bookings;
         }
 
-       
+        public async Task<List<BookingDto>> GetBookingsByCarAsync(int carId)
+        {
+            var bookings = await _context.Bookings
+                .Where(b => b.CarId == carId)
+                .Select(b => new BookingDto
+                {
+                    Id = b.Id,
+                    StartDate = b.StartDate,
+                    EndDate = b.EndDate,
+                    TotalPrice = b.TotalPrice,
+                    UserId = b.UserId,
+                    CarId = b.CarId,
+                    IdentityImage = b.IdentityImage,
+                    BookingStatus = b.BookingStatus
+                })
+                .ToListAsync();
+
+            return bookings;
+        }
     }
 }

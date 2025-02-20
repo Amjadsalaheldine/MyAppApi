@@ -9,5 +9,6 @@
         public decimal Price { get; set; }
         public string ImageUrl { get; set; }
         public string Location { get; internal set; }
+        public string Status { get; set; } 
     }
 }
