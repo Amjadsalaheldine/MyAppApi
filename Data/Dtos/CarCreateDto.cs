@@ -8,6 +8,6 @@
         public decimal Price { get; set; }
         public int LocationId { get; set; }
         public List<IFormFile>? Images { get; set; }
-        public string Status { get; set; } = "Available"; // ✅ تمت الإضافة (افتراضيًا متاحة)
+        public string Status { get; set; } = "Available"; 
     }
 }

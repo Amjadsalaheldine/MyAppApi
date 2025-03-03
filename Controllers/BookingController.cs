@@ -74,13 +74,14 @@ namespace MyAppApi.Controllers
 
             return BadRequest("Failed to create booking");
         }
-
         [HttpGet("user/{userId}")]
         public async Task<ActionResult<List<BookingDto>>> GetBookingsByUserId(string userId)
         {
             var bookings = await _context.Bookings
                 .Where(b => b.UserId == userId)
-                .Include(b => b.Car)
+                .Include(b => b.Car) 
+                .Include(b => b.Payments)
+                .Include(b => b.User)
                 .ToListAsync();
 
             if (bookings == null || !bookings.Any())
@@ -91,17 +92,27 @@ namespace MyAppApi.Controllers
             var bookingDtos = bookings.Select(b => new BookingDto
             {
                 Id = b.Id,
+                UserName = b.User.UserName,
                 StartDate = b.StartDate,
                 EndDate = b.EndDate,
                 TotalPrice = b.TotalPrice,
                 UserId = b.UserId,
                 CarId = b.CarId,
                 IdentityImage = b.IdentityImage,
-                BookingStatus = b.BookingStatus
+                BookingStatus = b.BookingStatus,
+
+               
+                CarModel = b.Car != null ? b.Car.Model : "Unknown",
+
+              
+                PaidAmount = b.Payments.Sum(p => p.Amount),
+                RemainingAmount = b.TotalPrice - b.Payments.Sum(p => p.Amount)
             }).ToList();
 
             return Ok(bookingDtos);
         }
+
+
 
         [HttpGet("car/{carId}")]
         public async Task<IActionResult> GetBookingsByCar(int carId)

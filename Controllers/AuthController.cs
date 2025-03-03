@@ -32,7 +32,15 @@ namespace MyAppApi.Controllers
                 return BadRequest(ModelState);
             }
 
-            var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+            var user = new ApplicationUser
+            {
+                UserName = $"{model.FirstName}.{model.LastName}",
+                Email = model.Email,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                PhoneNumber = model.PhoneNumber
+            };
+
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (!result.Succeeded)
@@ -59,11 +67,12 @@ namespace MyAppApi.Controllers
         private string GenerateJwtToken(ApplicationUser user)
         {
             var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(ClaimTypes.NameIdentifier, user.Id)
-            };
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email),
+        new Claim(ClaimTypes.NameIdentifier, user.Id),
+        new Claim(ClaimTypes.Name, user.UserName) 
+    };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -78,6 +87,7 @@ namespace MyAppApi.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
     }
 
     public class LoginModel
@@ -88,7 +98,10 @@ namespace MyAppApi.Controllers
 
     public class RegisterModel
     {
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
         public string Email { get; set; }
+        public string PhoneNumber { get; set; }
         public string Password { get; set; }
         public string ConfirmPassword { get; set; }
     }

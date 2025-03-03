@@ -1,5 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using MyAppApi.Models;
 using MyAppApi.Data.Dtos;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MyAppApi.Controllers
 {
@@ -24,12 +24,19 @@ namespace MyAppApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CarDto>>> GetCars()
+        public async Task<ActionResult<IEnumerable<CarDto>>> GetCars(string location = "")
         {
-            var cars = await _context.Cars
+            var carsQuery = _context.Cars
                 .Include(c => c.Images)
                 .Include(c => c.Location)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(location))
+            {
+                carsQuery = carsQuery.Where(c => c.Location.Name.Contains(location));
+            }
+
+            var cars = await carsQuery.ToListAsync();
 
             if (cars == null || !cars.Any())
             {
@@ -43,8 +50,9 @@ namespace MyAppApi.Controllers
                 Model = car.Model,
                 Year = car.Year,
                 Price = car.Price,
-                Location = car.Location != null ? $"{car.Location.City}, {car.Location.Country}" : "Unknown",
-                ImageUrl = car.Images.Any() ? $"/images/{car.Images.First().Url}" : "/images/default-image.jpg"
+                Location = car.Location.Name,
+                ImageUrl = car.Images.Any() ? $"/images/{car.Images.First().Url}" : "/images/default-image.jpg",
+                Status = car.Status
             }).ToList();
 
             return Ok(carDtos);
@@ -68,8 +76,9 @@ namespace MyAppApi.Controllers
                 Model = car.Model,
                 Year = car.Year,
                 Price = car.Price,
-                Location = car.Location != null ? $"{car.Location.City}, {car.Location.Country}" : "Unknown",
-                ImageUrl = car.Images.Any() ? $"/images/{car.Images.First().Url}" : "/images/default-image.jpg"
+                Location = car.Location != null ? $"{car.Location.Name}, {car.Location.Name}" : "Unknown",
+                ImageUrl = car.Images.Any() ? $"/images/{car.Images.First().Url}" : "/images/default-image.jpg",
+                Status = car.Status
             };
 
             return Ok(carDto);
@@ -97,9 +106,6 @@ namespace MyAppApi.Controllers
 
             return Ok(stats);
         }
-
-
-
 
         [HttpPost]
         public async Task<IActionResult> AddCar([FromForm] CarCreateDto carDto)
@@ -145,6 +151,94 @@ namespace MyAppApi.Controllers
 
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetCars), new { id = newCar.Id }, newCar);
+        }
+
+        [HttpGet("locations")]
+        public async Task<ActionResult<IEnumerable<LocationDto>>> GetLocations()
+        {
+            var locations = await _context.Locations
+                .Select(l => new LocationDto { Id = l.Id, Name = l.Name })
+                .ToListAsync();
+
+            return Ok(locations);
+        }
+
+        [HttpGet("all-cars")]
+        public async Task<IActionResult> GetAllCarsForAdmin()
+        {
+            var cars = await _context.Cars
+                .Include(c => c.Location)
+                .Include(c => c.Images)
+                .ToListAsync();
+
+            return Ok(cars);
+        }
+
+        [HttpPut("update-car/{id}")]
+        public async Task<IActionResult> UpdateCar(int id, [FromBody] CarUpdateDto carDto)
+        {
+            var car = await _context.Cars.FindAsync(id);
+            if (car == null) return NotFound("Car not found.");
+
+
+            if (carDto.Status != CarStatus.Available && carDto.Status != CarStatus.Unavailable)
+            {
+                return BadRequest("Status can only be changed to Available or Unavailable.");
+            }
+
+            car.Brand = carDto.Brand;
+            car.Model = carDto.Model;
+            car.Year = carDto.Year;
+            car.Price = carDto.Price;
+            car.Status = carDto.Status;
+
+            await _context.SaveChangesAsync();
+            return Ok("Car updated successfully.");
+        }
+        [HttpGet("car-stats/{carId}/{year}/{month}/{today?}")]
+        public async Task<IActionResult> GetCarBookingStats(int carId, int year, int month, bool today = false)
+        {
+            var monthStart = new DateTime(year, month, 1);
+            var monthEnd = today ? DateTime.Today : monthStart.AddMonths(1).AddDays(-1); 
+
+            var bookings = await _context.Bookings
+                .Include(b => b.User)
+                .Include(b => b.Car)
+                .Where(b => b.CarId == carId &&
+                            b.BookingStatus == "Accepted" &&
+                            (b.StartDate <= monthEnd && b.EndDate >= monthStart)) 
+                .Select(b => new StateDto
+                {
+                    StartDate = b.StartDate,
+                    EndDate = b.EndDate,
+                    UserId = b.UserId,
+                    UserName = b.User != null ? b.User.UserName : "Not Found",
+                    TotalPrice = b.TotalPrice,
+                    Price = b.Car != null ? b.Car.Price : 0 
+                })
+                .ToListAsync();
+
+            return Ok(bookings);
+        }
+
+
+
+
+
+        public class LocationDto
+        {
+            public int Id { get; set; }
+            public string? Name { get; set; }
+        }
+
+        public class StateDto
+        {
+            public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
+            public string UserId { get; set; }
+            public string UserName { get; set; }
+            public decimal Price { get; set; }
+            public decimal TotalPrice { get; set; }
         }
 
 
