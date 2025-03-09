@@ -9,8 +9,12 @@
     public int CarId { get; set; }
     public string? IdentityImage { get; set; }
     public string BookingStatus { get; set; }
-    public string CarModel { get; set; }
 
-    public decimal PaidAmount { get; set; } 
-    public decimal RemainingAmount { get; set; } 
+    public int? ModelId { get; set; }
+    public string? ModelName { get; set; }
+    public int? BrandId { get; set; }
+    public string? BrandName { get; set; }
+
+    public decimal PaidAmount { get; set; }
+    public decimal RemainingAmount { get; set; }
 }

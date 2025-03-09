@@ -106,5 +106,79 @@ namespace MyAppApi.Controllers
                 EndDate = payment.Booking.EndDate
             });
         }
+
+
+
+        [HttpPut("{paymentId}")]
+        public async Task<IActionResult> UpdatePayment(int paymentId, PaymentDto paymentDto)
+        {
+            var payment = await _context.Payments
+                .Include(p => p.Booking)
+                .FirstOrDefaultAsync(p => p.Id == paymentId);
+
+            if (payment == null)
+            {
+                return NotFound("Payment not found.");
+            }
+
+            var booking = payment.Booking;
+            if (booking == null)
+            {
+                return NotFound("Booking not found.");
+            }
+
+            // حساب الرصيد بعد التحديث
+            decimal totalPaidBefore = booking.Payments.Sum(p => p.Amount);
+            decimal totalPaidAfter = totalPaidBefore - payment.Amount + paymentDto.Amount;
+            decimal remainingBalance = booking.TotalPrice - totalPaidAfter;
+
+            if (remainingBalance < 0)
+            {
+                return BadRequest("The updated amount exceeds the total price.");
+            }
+
+            // تحديث بيانات الدفع
+            payment.Amount = paymentDto.Amount;
+            payment.PaymentDate = paymentDto.PaymentDate;
+            payment.RemainingBalance = remainingBalance;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new PaymentDto
+            {
+                Id = payment.Id,
+                Amount = payment.Amount,
+                PaymentDate = payment.PaymentDate,
+                RemainingBalance = payment.RemainingBalance,
+                BookingId = payment.BookingId
+            });
+        }
+        [HttpDelete("{paymentId}")]
+        public async Task<IActionResult> DeletePayment(int paymentId)
+        {
+            var payment = await _context.Payments
+                .Include(p => p.Booking)
+                .FirstOrDefaultAsync(p => p.Id == paymentId);
+
+            if (payment == null)
+            {
+                return NotFound("Payment not found.");
+            }
+
+            var booking = payment.Booking;
+            if (booking == null)
+            {
+                return NotFound("Booking not found.");
+            }
+
+            // إعادة حساب الرصيد بعد حذف الدفع
+            decimal newRemainingBalance = payment.RemainingBalance + payment.Amount;
+
+            _context.Payments.Remove(payment);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = "Payment deleted successfully.", NewRemainingBalance = newRemainingBalance });
+        }
+
     }
 }

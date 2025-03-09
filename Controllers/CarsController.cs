@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using MyAppApi.Models;
 using MyAppApi.Data.Dtos;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 
 namespace MyAppApi.Controllers
 {
@@ -29,6 +30,8 @@ namespace MyAppApi.Controllers
             var carsQuery = _context.Cars
                 .Include(c => c.Images)
                 .Include(c => c.Location)
+                .Include(c => c.Model)
+                    .ThenInclude(m => m.Brand) 
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(location))
@@ -38,7 +41,7 @@ namespace MyAppApi.Controllers
 
             var cars = await carsQuery.ToListAsync();
 
-            if (cars == null || !cars.Any())
+            if (!cars.Any())
             {
                 return NotFound("No cars found.");
             }
@@ -46,42 +49,25 @@ namespace MyAppApi.Controllers
             var carDtos = cars.Select(car => new CarDto
             {
                 Id = car.Id,
-                Brand = car.Brand,
-                Model = car.Model,
+                ModelId = car.Model?.Id,
+                ModelName = car.Model?.Name,
+                BrandId = car.Model?.Brand?.Id,
+                BrandName = car.Model?.Brand?.Name,
                 Year = car.Year,
                 Price = car.Price,
-                Location = car.Location.Name,
-                ImageUrl = car.Images.Any() ? $"/images/{car.Images.First().Url}" : "/images/default-image.jpg",
-                Status = car.Status
+                LocationId = car.Location.Id,
+                LocationName = car.Location.Name,
+                Status = car.Status,
+                PlateNumber = car.PlateNumber,
+                EngineNumber = car.EngineNumber,
+                ChassisNumber = car.ChassisNumber,
+                Classification = car.Classification,
+                CountryOfOrigin = car.CountryOfOrigin,
+                Color = car.Color,
+                ImageUrls = car.Images.Select(img => $"/images/{img.Url}").ToList()
             }).ToList();
 
             return Ok(carDtos);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetCar(int id)
-        {
-            var car = await _context.Cars
-                .Include(c => c.Images)
-                .Include(c => c.Location)
-                .FirstOrDefaultAsync(c => c.Id == id);
-
-            if (car == null)
-                return NotFound();
-
-            var carDto = new CarDto
-            {
-                Id = car.Id,
-                Brand = car.Brand,
-                Model = car.Model,
-                Year = car.Year,
-                Price = car.Price,
-                Location = car.Location != null ? $"{car.Location.Name}, {car.Location.Name}" : "Unknown",
-                ImageUrl = car.Images.Any() ? $"/images/{car.Images.First().Url}" : "/images/default-image.jpg",
-                Status = car.Status
-            };
-
-            return Ok(carDto);
         }
 
         [HttpGet("admin/stats")]
@@ -94,11 +80,14 @@ namespace MyAppApi.Controllers
             var pendingBookings = await _context.Bookings.CountAsync(b => b.BookingStatus == "Pending");
             var totalRevenue = await _context.Bookings.SumAsync(b => b.TotalPrice);
 
+           
+            var availableCarsIncludingBooked = availableCars + bookedCars;
+
             var stats = new
             {
                 TotalCars = totalCars,
                 BookedCars = bookedCars,
-                AvailableCars = availableCars,
+                AvailableCars = availableCarsIncludingBooked, 
                 UnavailableCars = unavailableCars,
                 PendingBookings = pendingBookings,
                 TotalRevenue = totalRevenue
@@ -107,23 +96,66 @@ namespace MyAppApi.Controllers
             return Ok(stats);
         }
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetCar(int id)
+        {
+            var car = await _context.Cars
+                .Include(c => c.Model)
+                    .ThenInclude(m => m.Brand) 
+                .Include(c => c.Images)
+                .Include(c => c.Location)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (car == null)
+                return NotFound();
+
+            var carDto = new CarDto
+            {
+                Id = car.Id,
+                ModelId = car.ModelId,
+                ModelName = car.Model?.Name ?? "Unknown", 
+                BrandId = car.Model?.BrandId,
+                BrandName = car.Model?.Brand?.Name ?? "Unknown", 
+                Year = car.Year,
+                Price = car.Price,
+                LocationId = car.LocationId,
+                LocationName = car.Location?.Name ?? "Unknown", 
+                Status = car.Status,
+                PlateNumber = car.PlateNumber,
+                EngineNumber = car.EngineNumber,
+                ChassisNumber = car.ChassisNumber,
+                Classification = car.Classification,
+                CountryOfOrigin = car.CountryOfOrigin,
+                Color = car.Color,
+                ImageUrls = car.Images.Any()
+                    ? car.Images.Select(img => $"/images/{img.Url}").ToList()
+                    : new List<string> { "/images/default-image.jpg" } 
+            };
+
+            return Ok(carDto);
+        }
+
+
         [HttpPost]
         public async Task<IActionResult> AddCar([FromForm] CarCreateDto carDto)
         {
             if (carDto == null || carDto.Images == null || !carDto.Images.Any())
                 return BadRequest("Invalid data or no images provided.");
 
-            var location = await _context.Locations.FindAsync(carDto.LocationId);
-            if (location == null)
-                return NotFound("Location not found.");
-
             var newCar = new Car
             {
-                Model = carDto.Model,
-                Brand = carDto.Brand,
+                ModelId = carDto.ModelId,
+                BrandId = carDto.BrandId,
                 Year = carDto.Year,
                 Price = carDto.Price,
                 LocationId = carDto.LocationId,
+                Status = Enum.TryParse<CarStatus>(carDto.Status, out var status) ? status : CarStatus.Available,
+                PlateNumber = carDto.PlateNumber,
+                EngineNumber = carDto.EngineNumber,
+                ChassisNumber = carDto.ChassisNumber,
+                Classification = carDto.Classification,
+                CountryOfOrigin = carDto.CountryOfOrigin,
+                Color = carDto.Color,
                 Images = new List<Image>()
             };
 
@@ -152,7 +184,6 @@ namespace MyAppApi.Controllers
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetCars), new { id = newCar.Id }, newCar);
         }
-
         [HttpGet("locations")]
         public async Task<ActionResult<IEnumerable<LocationDto>>> GetLocations()
         {
@@ -174,39 +205,51 @@ namespace MyAppApi.Controllers
             return Ok(cars);
         }
 
+
         [HttpPut("update-car/{id}")]
         public async Task<IActionResult> UpdateCar(int id, [FromBody] CarUpdateDto carDto)
         {
             var car = await _context.Cars.FindAsync(id);
             if (car == null) return NotFound("Car not found.");
 
-
-            if (carDto.Status != CarStatus.Available && carDto.Status != CarStatus.Unavailable)
-            {
-                return BadRequest("Status can only be changed to Available or Unavailable.");
-            }
-
-            car.Brand = carDto.Brand;
-            car.Model = carDto.Model;
+            car.ModelId = carDto.ModelId;
+            car.BrandId = carDto.BrandId;
             car.Year = carDto.Year;
             car.Price = carDto.Price;
+            car.LocationId = carDto.LocationId;
             car.Status = carDto.Status;
+            car.PlateNumber = carDto.PlateNumber;
+            car.EngineNumber = carDto.EngineNumber;
+            car.ChassisNumber = carDto.ChassisNumber;
+            car.Classification = carDto.Classification;
+            car.CountryOfOrigin = carDto.CountryOfOrigin;
+            car.Color = carDto.Color;
 
             await _context.SaveChangesAsync();
             return Ok("Car updated successfully.");
         }
+        [HttpGet("brands")]
+        public async Task<ActionResult<IEnumerable<BrandDto>>> GetBrands()
+        {
+            var brands = await _context.Brands
+                .Select(b => new BrandDto { Id = b.Id, Name = b.Name })
+                .ToListAsync();
+
+            return Ok(brands);
+        }
+
         [HttpGet("car-stats/{carId}/{year}/{month}/{today?}")]
         public async Task<IActionResult> GetCarBookingStats(int carId, int year, int month, bool today = false)
         {
             var monthStart = new DateTime(year, month, 1);
-            var monthEnd = today ? DateTime.Today : monthStart.AddMonths(1).AddDays(-1); 
+            var monthEnd = today ? DateTime.Today : monthStart.AddMonths(1).AddDays(-1);
 
             var bookings = await _context.Bookings
                 .Include(b => b.User)
                 .Include(b => b.Car)
                 .Where(b => b.CarId == carId &&
                             b.BookingStatus == "Accepted" &&
-                            (b.StartDate <= monthEnd && b.EndDate >= monthStart)) 
+                            (b.StartDate <= monthEnd && b.EndDate >= monthStart))
                 .Select(b => new StateDto
                 {
                     StartDate = b.StartDate,
@@ -214,13 +257,152 @@ namespace MyAppApi.Controllers
                     UserId = b.UserId,
                     UserName = b.User != null ? b.User.UserName : "Not Found",
                     TotalPrice = b.TotalPrice,
-                    Price = b.Car != null ? b.Car.Price : 0 
+                    Price = b.Car != null ? b.Car.Price : 0
                 })
                 .ToListAsync();
 
             return Ok(bookings);
         }
 
+        [HttpPost("brands")]
+        public async Task<ActionResult<BrandDto>> AddBrand([FromBody] BrandDto brandDto)
+        {
+            if (string.IsNullOrWhiteSpace(brandDto.Name))
+            {
+                return BadRequest("Brand name is required.");
+            }
+
+            var brand = new Brand { Name = brandDto.Name };
+            _context.Brands.Add(brand);
+            await _context.SaveChangesAsync();
+
+            return Ok(new BrandDto { Id = brand.Id, Name = brand.Name });
+        }
+
+
+
+        [HttpGet("models")]
+        public async Task<ActionResult<IEnumerable<ModelDto>>> GetModels()
+        {
+            var models = await _context.Models
+                .Select(m => new ModelDto
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    BrandId = m.BrandId,
+                    BrandName = m.Brand.Name
+                })
+                .ToListAsync();
+
+            return Ok(models);
+        }
+
+        [HttpPost("models")]
+        public async Task<ActionResult<ModelDto>> AddModel([FromBody] ModelDto modelDto)
+        {
+            if (string.IsNullOrWhiteSpace(modelDto.Name))
+            {
+                return BadRequest("Model name is required.");
+            }
+
+            var model = new Model
+            {
+                Name = modelDto.Name,
+                BrandId = modelDto.BrandId
+            };
+
+            _context.Models.Add(model);
+            await _context.SaveChangesAsync();
+
+            return Ok(new ModelDto { Id = model.Id, Name = model.Name, BrandId = model.BrandId });
+        }
+        [HttpGet("available")]
+        public async Task<IActionResult> GetAvailableCars()
+        {
+            var cars = await _context.Cars
+                .Where(c => c.Status == CarStatus.Available || c.Status == CarStatus.Booked) 
+                .Select(c => new CarDto
+                {
+                    Id = c.Id,
+                    ModelId = c.ModelId,
+                    ModelName = c.Model.Name, 
+                    BrandId = c.BrandId,
+                    BrandName = c.Brand.Name, 
+                    Year = c.Year,
+                    Price = c.Price,
+                    LocationId = c.LocationId,
+                    LocationName = c.Location.Name, 
+                    Status = c.Status,
+                    PlateNumber = c.PlateNumber,
+                    EngineNumber = c.EngineNumber,
+                    ChassisNumber = c.ChassisNumber,
+                    Classification = c.Classification,
+                    CountryOfOrigin = c.CountryOfOrigin,
+                    Color = c.Color,
+                    ImageUrls = c.Images.Select(i => i.Url).ToList() 
+                })
+                .ToListAsync();
+            return Ok(cars);
+        }
+
+        [HttpGet("booked")]
+        public async Task<IActionResult> GetBookedCars()
+        {
+            var cars = await _context.Cars
+                .Where(c => c.Status == CarStatus.Booked)
+                .Select(c => new CarDto
+                {
+                    Id = c.Id,
+                    ModelId = c.ModelId,
+                    ModelName = c.Model.Name,
+                    BrandId = c.BrandId,
+                    BrandName = c.Brand.Name,
+                    Year = c.Year,
+                    Price = c.Price,
+                    LocationId = c.LocationId,
+                    LocationName = c.Location.Name,
+                    Status = c.Status,
+                    PlateNumber = c.PlateNumber,
+                    EngineNumber = c.EngineNumber,
+                    ChassisNumber = c.ChassisNumber,
+                    Classification = c.Classification,
+                    CountryOfOrigin = c.CountryOfOrigin,
+                    Color = c.Color,
+                    ImageUrls = c.Images.Select(i => i.Url).ToList()
+                })
+                .ToListAsync();
+            return Ok(cars);
+        }
+
+
+        [HttpGet("unavailable")]
+        public async Task<IActionResult> GetUnavailableCars()
+        {
+            var cars = await _context.Cars
+                .Where(c => c.Status == CarStatus.Unavailable)
+                .Select(c => new CarDto
+                {
+                    Id = c.Id,
+                    ModelId = c.ModelId,
+                    ModelName = c.Model.Name,
+                    BrandId = c.BrandId,
+                    BrandName = c.Brand.Name,
+                    Year = c.Year,
+                    Price = c.Price,
+                    LocationId = c.LocationId,
+                    LocationName = c.Location.Name,
+                    Status = c.Status,
+                    PlateNumber = c.PlateNumber,
+                    EngineNumber = c.EngineNumber,
+                    ChassisNumber = c.ChassisNumber,
+                    Classification = c.Classification,
+                    CountryOfOrigin = c.CountryOfOrigin,
+                    Color = c.Color,
+                    ImageUrls = c.Images.Select(i => i.Url).ToList()
+                })
+                .ToListAsync();
+            return Ok(cars);
+        }
 
 
 
@@ -240,7 +422,5 @@ namespace MyAppApi.Controllers
             public decimal Price { get; set; }
             public decimal TotalPrice { get; set; }
         }
-
-
     }
 }

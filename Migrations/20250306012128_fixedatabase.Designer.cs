@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MyAppApi.Data;
 
@@ -11,9 +12,11 @@ using MyAppApi.Data;
 namespace MyAppApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250306012128_fixedatabase")]
+    partial class fixedatabase
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -252,6 +255,7 @@ namespace MyAppApi.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("TotalPrice")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("UserId")
@@ -266,23 +270,6 @@ namespace MyAppApi.Migrations
                     b.ToTable("Bookings");
                 });
 
-            modelBuilder.Entity("MyAppApi.Models.Brand", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Brands");
-                });
-
             modelBuilder.Entity("MyAppApi.Models.Car", b =>
                 {
                     b.Property<int>("Id")
@@ -291,8 +278,9 @@ namespace MyAppApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("BrandId")
-                        .HasColumnType("int");
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ChassisNumber")
                         .IsRequired()
@@ -317,14 +305,19 @@ namespace MyAppApi.Migrations
                     b.Property<int>("LocationId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ModelId")
+                    b.Property<int?>("LocationId1")
                         .HasColumnType("int");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PlateNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("Status")
@@ -335,11 +328,9 @@ namespace MyAppApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BrandId");
-
                     b.HasIndex("LocationId");
 
-                    b.HasIndex("ModelId");
+                    b.HasIndex("LocationId1");
 
                     b.ToTable("Cars");
                 });
@@ -383,28 +374,6 @@ namespace MyAppApi.Migrations
                     b.ToTable("Locations");
                 });
 
-            modelBuilder.Entity("MyAppApi.Models.Model", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("BrandId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BrandId");
-
-                    b.ToTable("Models");
-                });
-
             modelBuilder.Entity("MyAppApi.Models.Payment", b =>
                 {
                     b.Property<int>("Id")
@@ -414,6 +383,7 @@ namespace MyAppApi.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("BookingId")
@@ -423,6 +393,7 @@ namespace MyAppApi.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("RemainingBalance")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -488,7 +459,7 @@ namespace MyAppApi.Migrations
                     b.HasOne("MyAppApi.Models.Car", "Car")
                         .WithMany("Bookings")
                         .HasForeignKey("CarId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MyAppApi.Models.ApplicationUser", "User")
@@ -502,27 +473,17 @@ namespace MyAppApi.Migrations
 
             modelBuilder.Entity("MyAppApi.Models.Car", b =>
                 {
-                    b.HasOne("MyAppApi.Models.Brand", "Brand")
-                        .WithMany("Cars")
-                        .HasForeignKey("BrandId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("MyAppApi.Models.Location", "Location")
-                        .WithMany("Cars")
+                        .WithMany()
                         .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MyAppApi.Models.Model", "Model")
+                    b.HasOne("MyAppApi.Models.Location", null)
                         .WithMany("Cars")
-                        .HasForeignKey("ModelId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Brand");
+                        .HasForeignKey("LocationId1");
 
                     b.Navigation("Location");
-
-                    b.Navigation("Model");
                 });
 
             modelBuilder.Entity("MyAppApi.Models.Image", b =>
@@ -530,21 +491,10 @@ namespace MyAppApi.Migrations
                     b.HasOne("MyAppApi.Models.Car", "Car")
                         .WithMany("Images")
                         .HasForeignKey("CarId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Car");
-                });
-
-            modelBuilder.Entity("MyAppApi.Models.Model", b =>
-                {
-                    b.HasOne("MyAppApi.Models.Brand", "Brand")
-                        .WithMany("Models")
-                        .HasForeignKey("BrandId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Brand");
+                    b.Navigation("Car");
                 });
 
             modelBuilder.Entity("MyAppApi.Models.Payment", b =>
@@ -563,13 +513,6 @@ namespace MyAppApi.Migrations
                     b.Navigation("Payments");
                 });
 
-            modelBuilder.Entity("MyAppApi.Models.Brand", b =>
-                {
-                    b.Navigation("Cars");
-
-                    b.Navigation("Models");
-                });
-
             modelBuilder.Entity("MyAppApi.Models.Car", b =>
                 {
                     b.Navigation("Bookings");
@@ -578,11 +521,6 @@ namespace MyAppApi.Migrations
                 });
 
             modelBuilder.Entity("MyAppApi.Models.Location", b =>
-                {
-                    b.Navigation("Cars");
-                });
-
-            modelBuilder.Entity("MyAppApi.Models.Model", b =>
                 {
                     b.Navigation("Cars");
                 });
