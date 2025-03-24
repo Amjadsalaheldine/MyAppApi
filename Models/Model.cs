@@ -8,6 +8,6 @@
         public int BrandId { get; set; }
         public virtual Brand Brand { get; set; }
 
-        public virtual ICollection<Car> Cars { get; set; } = new List<Car>(); // ✅ تمت إضافتها
+        public virtual ICollection<Car> Cars { get; set; } = new List<Car>(); 
     }
 }

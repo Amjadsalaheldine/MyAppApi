@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MyAppApi.Data;
 
@@ -11,9 +12,11 @@ using MyAppApi.Data;
 namespace MyAppApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250311215611_AddRowInPayemtTable")]
+    partial class AddRowInPayemtTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -416,7 +419,7 @@ namespace MyAppApi.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("BookingId")
+                    b.Property<int>("BookingId")
                         .HasColumnType("int");
 
                     b.Property<string>("Note")
@@ -430,9 +433,6 @@ namespace MyAppApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("PaymentType")
-                        .HasColumnType("int");
-
                     b.Property<string>("Reference")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -440,73 +440,11 @@ namespace MyAppApi.Migrations
                     b.Property<decimal>("RemainingBalance")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("RepairId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("BookingId");
 
-                    b.HasIndex("RepairId");
-
                     b.ToTable("Payments");
-                });
-
-            modelBuilder.Entity("Repair", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CarId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("DeliveryDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Memo")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Problem")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("ReceiveDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("WorkshopId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CarId");
-
-                    b.HasIndex("WorkshopId");
-
-                    b.ToTable("Repairs");
-                });
-
-            modelBuilder.Entity("Workshop", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Responsible")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Workshops");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -629,35 +567,10 @@ namespace MyAppApi.Migrations
                     b.HasOne("MyAppApi.Models.Booking", "Booking")
                         .WithMany("Payments")
                         .HasForeignKey("BookingId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Repair", "Repair")
-                        .WithMany("Payments")
-                        .HasForeignKey("RepairId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Booking");
-
-                    b.Navigation("Repair");
-                });
-
-            modelBuilder.Entity("Repair", b =>
-                {
-                    b.HasOne("MyAppApi.Models.Car", "Car")
-                        .WithMany("Repairs")
-                        .HasForeignKey("CarId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Workshop", "Workshop")
-                        .WithMany("Repairs")
-                        .HasForeignKey("WorkshopId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Car");
-
-                    b.Navigation("Workshop");
                 });
 
             modelBuilder.Entity("MyAppApi.Models.Booking", b =>
@@ -677,8 +590,6 @@ namespace MyAppApi.Migrations
                     b.Navigation("Bookings");
 
                     b.Navigation("Images");
-
-                    b.Navigation("Repairs");
                 });
 
             modelBuilder.Entity("MyAppApi.Models.Location", b =>
@@ -689,16 +600,6 @@ namespace MyAppApi.Migrations
             modelBuilder.Entity("MyAppApi.Models.Model", b =>
                 {
                     b.Navigation("Cars");
-                });
-
-            modelBuilder.Entity("Repair", b =>
-                {
-                    b.Navigation("Payments");
-                });
-
-            modelBuilder.Entity("Workshop", b =>
-                {
-                    b.Navigation("Repairs");
                 });
 #pragma warning restore 612, 618
         }

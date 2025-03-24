@@ -17,28 +17,37 @@ public class ManageBookingController : ControllerBase
         _context = context;
     }
 
-  
+
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ManageBookingDto>>> GetBookings()
+    public async Task<ActionResult<IEnumerable<ManageBookingDto>>> GetBookings(string location = "")
     {
-        var bookings = await _context.Bookings
+        var bookingsQuery = _context.Bookings
             .Include(b => b.Car)
-                .ThenInclude(c => c.Model) 
+                .ThenInclude(c => c.Model)
             .Include(b => b.Car)
-                .ThenInclude(c => c.Brand) 
+                .ThenInclude(c => c.Brand)
+            .Include(b => b.Car)
+                .ThenInclude(c => c.Location) 
             .Include(b => b.User)
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(location))
+        {
+            bookingsQuery = bookingsQuery.Where(b => b.Car.Location.Name.Contains(location));
+        }
+
+        var bookings = await bookingsQuery
             .Select(b => new ManageBookingDto
             {
                 Id = b.Id,
                 UserId = b.UserId,
                 UserName = b.User.UserName,
                 IdentityImageUrl = !string.IsNullOrEmpty(b.IdentityImage)
-    ? $"/identity_images/{Path.GetFileName(b.IdentityImage)}" 
-    : null,
-
+                    ? $"/identity_images/{Path.GetFileName(b.IdentityImage)}"
+                    : null,
                 CarId = b.CarId,
-                CarModel = b.Car.Model.Name, 
-                CarBrand = b.Car.Brand.Name, 
+                CarModel = b.Car.Model.Name,
+                CarBrand = b.Car.Brand.Name,
                 TotalPrice = b.TotalPrice,
                 BookingStatus = b.BookingStatus,
                 StartDate = b.StartDate,
@@ -49,7 +58,6 @@ public class ManageBookingController : ControllerBase
         return Ok(bookings);
     }
 
-    
     [HttpGet("{id}")]
     public async Task<ActionResult<ManageBookingDto>> GetBooking(int id)
     {
@@ -74,6 +82,8 @@ public class ManageBookingController : ControllerBase
                 BookingStatus = b.BookingStatus,
                 StartDate = b.StartDate,
                 EndDate = b.EndDate,
+                UserName = b.User.UserName
+
             })
             .FirstOrDefaultAsync();
 

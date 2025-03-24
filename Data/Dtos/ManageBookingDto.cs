@@ -5,7 +5,7 @@ public class manageBookingDto
     public string CarModel { get; set; }
 
     public int Id { get; set; }
-    public string ClientName { get; set; } = string.Empty;
+    public string UserName { get; set; } 
     public string IdentityImageUrl { get; set; } = string.Empty;
     public decimal Price { get; set; }
     public string Status { get; set; } = "Pending";

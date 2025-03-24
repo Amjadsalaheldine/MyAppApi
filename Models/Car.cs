@@ -19,6 +19,9 @@
         public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
         public virtual ICollection<Image> Images { get; set; } = new List<Image>();
 
+      
+        public virtual ICollection<Repair> Repairs { get; set; } = new List<Repair>();
+
         public CarStatus Status { get; set; } = CarStatus.Available;
 
         public string PlateNumber { get; set; }

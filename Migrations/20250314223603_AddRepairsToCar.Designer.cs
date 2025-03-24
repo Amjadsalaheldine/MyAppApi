@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MyAppApi.Data;
 
@@ -11,9 +12,11 @@ using MyAppApi.Data;
 namespace MyAppApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250314223603_AddRepairsToCar")]
+    partial class AddRepairsToCar
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -416,7 +419,7 @@ namespace MyAppApi.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("BookingId")
+                    b.Property<int>("BookingId")
                         .HasColumnType("int");
 
                     b.Property<string>("Note")
@@ -430,9 +433,6 @@ namespace MyAppApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("PaymentType")
-                        .HasColumnType("int");
-
                     b.Property<string>("Reference")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -440,14 +440,9 @@ namespace MyAppApi.Migrations
                     b.Property<decimal>("RemainingBalance")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("RepairId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("BookingId");
-
-                    b.HasIndex("RepairId");
 
                     b.ToTable("Payments");
                 });
@@ -468,6 +463,9 @@ namespace MyAppApi.Migrations
 
                     b.Property<string>("Memo")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Payment")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Problem")
                         .IsRequired()
@@ -629,16 +627,10 @@ namespace MyAppApi.Migrations
                     b.HasOne("MyAppApi.Models.Booking", "Booking")
                         .WithMany("Payments")
                         .HasForeignKey("BookingId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Repair", "Repair")
-                        .WithMany("Payments")
-                        .HasForeignKey("RepairId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Booking");
-
-                    b.Navigation("Repair");
                 });
 
             modelBuilder.Entity("Repair", b =>
@@ -689,11 +681,6 @@ namespace MyAppApi.Migrations
             modelBuilder.Entity("MyAppApi.Models.Model", b =>
                 {
                     b.Navigation("Cars");
-                });
-
-            modelBuilder.Entity("Repair", b =>
-                {
-                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("Workshop", b =>

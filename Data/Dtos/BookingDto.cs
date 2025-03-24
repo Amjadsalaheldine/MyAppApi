@@ -17,4 +17,5 @@
 
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
+
 }

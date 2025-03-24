@@ -12,6 +12,12 @@
 
   <ItemGroup>
   
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+  
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
+  
+    <PackageReference Include="itext7" Version="9.1.0" />
+  
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.1" />
   
     <PackageReference Include="Microsoft.AspNetCore.Components.Forms" Version="8.0.12" />
@@ -29,7 +35,9 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Graph" Version="5.69.0" />
     <PackageReference Include="MudBlazor" Version="8.2.0" />
+    <PackageReference Include="QuestPDF" Version="2025.1.5" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Syncfusion.Blazor.Charts" Version="28.2.12" />
     <PackageReference Include="System.Windows.Forms" Version="4.0.0" />
 	
   </ItemGroup>

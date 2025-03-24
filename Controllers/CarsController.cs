@@ -24,6 +24,7 @@ namespace MyAppApi.Controllers
             _env = env;
         }
 
+        
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CarDto>>> GetCars(string location = "")
         {
@@ -31,7 +32,7 @@ namespace MyAppApi.Controllers
                 .Include(c => c.Images)
                 .Include(c => c.Location)
                 .Include(c => c.Model)
-                    .ThenInclude(m => m.Brand) 
+                    .ThenInclude(m => m.Brand)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(location))
@@ -70,6 +71,7 @@ namespace MyAppApi.Controllers
             return Ok(carDtos);
         }
 
+      
         [HttpGet("admin/stats")]
         public async Task<IActionResult> GetAdminStats()
         {
@@ -80,14 +82,11 @@ namespace MyAppApi.Controllers
             var pendingBookings = await _context.Bookings.CountAsync(b => b.BookingStatus == "Pending");
             var totalRevenue = await _context.Bookings.SumAsync(b => b.TotalPrice);
 
-           
-            var availableCarsIncludingBooked = availableCars + bookedCars;
-
             var stats = new
             {
                 TotalCars = totalCars,
                 BookedCars = bookedCars,
-                AvailableCars = availableCarsIncludingBooked, 
+                AvailableCars = availableCars,
                 UnavailableCars = unavailableCars,
                 PendingBookings = pendingBookings,
                 TotalRevenue = totalRevenue
@@ -96,12 +95,42 @@ namespace MyAppApi.Controllers
             return Ok(stats);
         }
 
+        [HttpGet("admin/stats/filtered")]
+        public async Task<IActionResult> GetFilteredStats(string location = "")
+        {
+            var carsQuery = _context.Cars.AsQueryable();
+
+            if (!string.IsNullOrEmpty(location))
+            {
+                carsQuery = carsQuery.Where(c => c.Location.Name.Contains(location));
+            }
+
+            var totalCars = await carsQuery.CountAsync();
+            var bookedCars = await carsQuery.CountAsync(c => c.Status == CarStatus.Booked);
+            var availableCars = await carsQuery.CountAsync(c => c.Status == CarStatus.Available);
+            var unavailableCars = await carsQuery.CountAsync(c => c.Status == CarStatus.Unavailable);
+            var pendingBookings = await _context.Bookings
+                .CountAsync(b => b.BookingStatus == "Pending" && (string.IsNullOrEmpty(location) || b.Car.Location.Name.Contains(location)));
+
+            var stats = new
+            {
+                TotalCars = totalCars,
+                BookedCars = bookedCars,
+                AvailableCars = availableCars + bookedCars,
+                UnavailableCars = unavailableCars,
+                PendingBookings = pendingBookings
+            };
+
+            return Ok(stats);
+        }
+
+        
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCar(int id)
         {
             var car = await _context.Cars
                 .Include(c => c.Model)
-                    .ThenInclude(m => m.Brand) 
+                    .ThenInclude(m => m.Brand)
                 .Include(c => c.Images)
                 .Include(c => c.Location)
                 .FirstOrDefaultAsync(c => c.Id == id);
@@ -113,13 +142,13 @@ namespace MyAppApi.Controllers
             {
                 Id = car.Id,
                 ModelId = car.ModelId,
-                ModelName = car.Model?.Name ?? "Unknown", 
+                ModelName = car.Model?.Name ?? "Unknown",
                 BrandId = car.Model?.BrandId,
-                BrandName = car.Model?.Brand?.Name ?? "Unknown", 
+                BrandName = car.Model?.Brand?.Name ?? "Unknown",
                 Year = car.Year,
                 Price = car.Price,
                 LocationId = car.LocationId,
-                LocationName = car.Location?.Name ?? "Unknown", 
+                LocationName = car.Location?.Name ?? "Unknown",
                 Status = car.Status,
                 PlateNumber = car.PlateNumber,
                 EngineNumber = car.EngineNumber,
@@ -129,13 +158,13 @@ namespace MyAppApi.Controllers
                 Color = car.Color,
                 ImageUrls = car.Images.Any()
                     ? car.Images.Select(img => $"/images/{img.Url}").ToList()
-                    : new List<string> { "/images/default-image.jpg" } 
+                    : new List<string> { "/images/default-image.jpg" }
             };
 
             return Ok(carDto);
         }
 
-
+      
         [HttpPost]
         public async Task<IActionResult> AddCar([FromForm] CarCreateDto carDto)
         {
@@ -184,6 +213,8 @@ namespace MyAppApi.Controllers
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetCars), new { id = newCar.Id }, newCar);
         }
+
+     
         [HttpGet("locations")]
         public async Task<ActionResult<IEnumerable<LocationDto>>> GetLocations()
         {
@@ -194,6 +225,19 @@ namespace MyAppApi.Controllers
             return Ok(locations);
         }
 
+        
+        [HttpPost("locations")]
+        public async Task<IActionResult> AddLocation([FromBody] LocationDto locationDto)
+        {
+            var location = new Location { Name = locationDto.Name };
+
+            _context.Locations.Add(location);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetLocations), new { id = location.Id }, locationDto);
+        }
+
+        
         [HttpGet("all-cars")]
         public async Task<IActionResult> GetAllCarsForAdmin()
         {
@@ -205,7 +249,7 @@ namespace MyAppApi.Controllers
             return Ok(cars);
         }
 
-
+   
         [HttpPut("update-car/{id}")]
         public async Task<IActionResult> UpdateCar(int id, [FromBody] CarUpdateDto carDto)
         {
@@ -228,16 +272,8 @@ namespace MyAppApi.Controllers
             await _context.SaveChangesAsync();
             return Ok("Car updated successfully.");
         }
-        [HttpGet("brands")]
-        public async Task<ActionResult<IEnumerable<BrandDto>>> GetBrands()
-        {
-            var brands = await _context.Brands
-                .Select(b => new BrandDto { Id = b.Id, Name = b.Name })
-                .ToListAsync();
 
-            return Ok(brands);
-        }
-
+      
         [HttpGet("car-stats/{carId}/{year}/{month}/{today?}")]
         public async Task<IActionResult> GetCarBookingStats(int carId, int year, int month, bool today = false)
         {
@@ -264,6 +300,18 @@ namespace MyAppApi.Controllers
             return Ok(bookings);
         }
 
+       
+        [HttpGet("brands")]
+        public async Task<ActionResult<IEnumerable<BrandDto>>> GetBrands()
+        {
+            var brands = await _context.Brands
+                .Select(b => new BrandDto { Id = b.Id, Name = b.Name })
+                .ToListAsync();
+
+            return Ok(brands);
+        }
+
+
         [HttpPost("brands")]
         public async Task<ActionResult<BrandDto>> AddBrand([FromBody] BrandDto brandDto)
         {
@@ -280,29 +328,54 @@ namespace MyAppApi.Controllers
         }
 
 
-
         [HttpGet("models")]
         public async Task<ActionResult<IEnumerable<ModelDto>>> GetModels()
         {
             var models = await _context.Models
+                .Include(m => m.Brand)
                 .Select(m => new ModelDto
                 {
                     Id = m.Id,
                     Name = m.Name,
                     BrandId = m.BrandId,
-                    BrandName = m.Brand.Name
+                    BrandName = m.Brand != null ? m.Brand.Name : ""
                 })
                 .ToListAsync();
 
             return Ok(models);
         }
 
+      
+        [HttpGet("models/{brandId}")]
+        public async Task<IActionResult> GetModelsByBrand(int brandId)
+        {
+            var models = await _context.Models
+                .Where(m => m.BrandId == brandId)
+                .Select(m => new ModelDto
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    BrandId = m.BrandId,
+                    BrandName = m.Brand != null ? m.Brand.Name : ""
+                })
+                .ToListAsync();
+
+            return Ok(models);
+        }
+
+       
         [HttpPost("models")]
         public async Task<ActionResult<ModelDto>> AddModel([FromBody] ModelDto modelDto)
         {
             if (string.IsNullOrWhiteSpace(modelDto.Name))
             {
                 return BadRequest("Model name is required.");
+            }
+
+            var brand = await _context.Brands.FindAsync(modelDto.BrandId);
+            if (brand == null)
+            {
+                return NotFound("Brand not found.");
             }
 
             var model = new Model
@@ -314,24 +387,44 @@ namespace MyAppApi.Controllers
             _context.Models.Add(model);
             await _context.SaveChangesAsync();
 
-            return Ok(new ModelDto { Id = model.Id, Name = model.Name, BrandId = model.BrandId });
+            return Ok(new ModelDto
+            {
+                Id = model.Id,
+                Name = model.Name,
+                BrandId = model.BrandId,
+                BrandName = brand.Name
+            });
         }
+
+      
         [HttpGet("available")]
-        public async Task<IActionResult> GetAvailableCars()
+        public async Task<IActionResult> GetAvailableCars(string location = "")
         {
-            var cars = await _context.Cars
-                .Where(c => c.Status == CarStatus.Available || c.Status == CarStatus.Booked) 
+            var carsQuery = _context.Cars
+                .Where(c => c.Status == CarStatus.Available || c.Status == CarStatus.Booked)
+                .Include(c => c.Location)
+                .Include(c => c.Images)
+                .Include(c => c.Model)
+                    .ThenInclude(m => m.Brand)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(location))
+            {
+                carsQuery = carsQuery.Where(c => c.Location.Name.Contains(location));
+            }
+
+            var cars = await carsQuery
                 .Select(c => new CarDto
                 {
                     Id = c.Id,
                     ModelId = c.ModelId,
-                    ModelName = c.Model.Name, 
-                    BrandId = c.BrandId,
-                    BrandName = c.Brand.Name, 
+                    ModelName = c.Model.Name,
+                    BrandId = c.Model.Brand.Id,
+                    BrandName = c.Model.Brand.Name,
                     Year = c.Year,
                     Price = c.Price,
                     LocationId = c.LocationId,
-                    LocationName = c.Location.Name, 
+                    LocationName = c.Location.Name,
                     Status = c.Status,
                     PlateNumber = c.PlateNumber,
                     EngineNumber = c.EngineNumber,
@@ -339,17 +432,31 @@ namespace MyAppApi.Controllers
                     Classification = c.Classification,
                     CountryOfOrigin = c.CountryOfOrigin,
                     Color = c.Color,
-                    ImageUrls = c.Images.Select(i => i.Url).ToList() 
+                    ImageUrls = c.Images.Select(i => i.Url).ToList()
                 })
                 .ToListAsync();
+
             return Ok(cars);
         }
 
+ 
         [HttpGet("booked")]
-        public async Task<IActionResult> GetBookedCars()
+        public async Task<IActionResult> GetBookedCars(string location = "")
         {
-            var cars = await _context.Cars
+            var carsQuery = _context.Cars
                 .Where(c => c.Status == CarStatus.Booked)
+                .Include(c => c.Location)
+                .Include(c => c.Images)
+                .Include(c => c.Model)
+                    .ThenInclude(m => m.Brand)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(location))
+            {
+                carsQuery = carsQuery.Where(c => c.Location.Name.Contains(location));
+            }
+
+            var cars = await carsQuery
                 .Select(c => new CarDto
                 {
                     Id = c.Id,
@@ -371,15 +478,28 @@ namespace MyAppApi.Controllers
                     ImageUrls = c.Images.Select(i => i.Url).ToList()
                 })
                 .ToListAsync();
+
             return Ok(cars);
         }
 
-
+    
         [HttpGet("unavailable")]
-        public async Task<IActionResult> GetUnavailableCars()
+        public async Task<IActionResult> GetUnavailableCars(string location = "")
         {
-            var cars = await _context.Cars
+            var carsQuery = _context.Cars
                 .Where(c => c.Status == CarStatus.Unavailable)
+                .Include(c => c.Location)
+                .Include(c => c.Images)
+                .Include(c => c.Model)
+                    .ThenInclude(m => m.Brand)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(location))
+            {
+                carsQuery = carsQuery.Where(c => c.Location.Name.Contains(location));
+            }
+
+            var cars = await carsQuery
                 .Select(c => new CarDto
                 {
                     Id = c.Id,
@@ -401,12 +521,11 @@ namespace MyAppApi.Controllers
                     ImageUrls = c.Images.Select(i => i.Url).ToList()
                 })
                 .ToListAsync();
+
             return Ok(cars);
         }
 
-
-
-
+      
         public class LocationDto
         {
             public int Id { get; set; }
